@@ -1,6 +1,6 @@
 {
   "name": "@borderlesslabs/context",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Tiny, type-safe, JavaScript-native `context` implementation",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
