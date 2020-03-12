@@ -1,5 +1,5 @@
 {
-  "name": "@borderlesslabs/context",
+  "name": "@borderless/context",
   "version": "1.0.0",
   "description": "Tiny, type-safe, JavaScript-native `context` implementation",
   "main": "dist/index.js",
@@ -49,7 +49,7 @@
   "size-limit": [
     {
       "path": "dist/index.js",
-      "limit": "400 B"
+      "limit": "200 B"
     }
   ],
   "jest": {

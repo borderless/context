@@ -1,63 +1,46 @@
-import { Emitter, once } from "@servie/events";
-
-/**
- * Augment this interface to add type-safe `Context.signal#{on,off}`.
- */
-export interface ContextEvents {
-  abort: [];
+export interface Context<T> {
+  value<K extends keyof T>(key: K): T[K];
 }
 
 /**
- * Augment this interface to add type-safe `Context#values`.
+ * The `BackgroundContext` object implements the default `Context` interface.
  */
-export interface ContextValues {
-  displayName: string;
-}
-
-/**
- * The `ContextSignal` provides an interface to notify of events anywhere in the application.
- */
-export class ContextSignal extends Emitter<ContextEvents> {
-  get aborted() {
-    return false;
+class BackgroundContext<T = {}> implements Context<T> {
+  value<K extends keyof T>(key: K): T[K] {
+    return undefined as any;
   }
+}
 
-  constructor() {
+/**
+ * The `ValueContext` object implements a chain-able `Context` interface.
+ */
+class ValueContext<T> extends BackgroundContext<T> {
+  constructor(
+    private _parent: Context<any>,
+    private _key: keyof T,
+    private _value: T[typeof _key]
+  ) {
     super();
+  }
 
-    // Listen for the abort signal.
-    once(this, "abort", () => {
-      Object.defineProperty(this, "aborted", { value: true });
-    });
+  value<K extends keyof T>(key: K): T[K] {
+    if (key === this._key) return this._value as any;
+    return this._parent.value(key);
   }
 }
 
 /**
- * The `Context` object provides a hook for application events and values.
+ * Initial context.
  */
-export class Context {
-  signal = new ContextSignal();
-  values: Partial<ContextValues>;
+export const background: Context<{}> = new BackgroundContext();
 
-  constructor(public parent?: Context) {
-    // Proxy values and events from `parent`.
-    if (parent) {
-      parent.signal.each(({ type, args }) => this.signal.emit(type, ...args));
-      this.values = Object.create(parent.values);
-    } else {
-      this.values = Object.create(null);
-    }
-  }
-
-  abort() {
-    this.signal.emit("abort");
-  }
-
-  get<T extends keyof ContextValues>(key: T): Partial<ContextValues>[T] {
-    return this.values[key];
-  }
-
-  set<T extends keyof ContextValues>(key: T, value: ContextValues[T]) {
-    this.values[key] = value;
-  }
+/**
+ * Create a `context` object that inherits from the parent values.
+ */
+export function withValue<T, K extends PropertyKey, V extends any>(
+  parent: Context<T>,
+  key: K,
+  value: V
+): Context<T & Record<K, V>> {
+  return new ValueContext<T & Record<K, V>>(parent, key, value as any);
 }

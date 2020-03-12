@@ -8,75 +8,55 @@
 
 > Tiny, type-safe, JavaScript-native `context` implementation.
 
-**Why?** Working on utilities across browsers, serverless and node.js require different of implementations, e.g. `fetch` vs `require('http')`. Go's [`context`](https://blog.golang.org/context) package provides a nice abstraction for my needs. By implementing a JavaScript first variation, we can achieve the same benefits.
+**Why?** Working on a project across browsers, serverless and node.js requires different implementations on the same thing, e.g. `fetch` vs `require('http')`. Go's [`context`](https://blog.golang.org/context) package provides a nice abstraction to bring all the interfaces together. By implementing a JavaScript first variation, we can achieve the same benefits.
 
 ## Installation
 
 ```sh
-npm install @borderlesslabs/context --save
+npm install @borderless/context --save
 ```
 
 ## Usage
 
-Context events and values are unidirectional, child context automatically inherit the parents values.
+Context values are unidirectional.
 
-```js
-import { Context } from "@borderlesslabs/context";
+```ts
+import { background, withValue } from "@borderless/context";
 
-const context = new Context();
-const childContext = new Context(context);
-```
+const defaultContext = background;
+const anotherContext = withValue(defaultContext, "test", "test");
 
-### Values
-
-The `context` provides a way to attach and retrieve values.
-
-```js
-context.set("test", true);
-
-context.get("test"); //=> `true`
-childContext.get("test"); //=> `true`
-
-childContext.set("test", false);
-
-context.get("test"); //=> `true`
-childContext.get("test"); //=> `false`
-```
-
-### Events
-
-The standard for async notifications in JavaScript is the event emitter. Based on the browser [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController), the `context` has an [event emitter](https://github.com/serviejs/events) available on `signal`.
-
-```js
-context.signal.on("abort", () => {});
-childContext.signal.on("abort", () => {});
-context.abort(); // Triggers `abort` event.
-
-context.signal.emit("test"); // Propagates to `childContext`.
-childContext.signal.emit("test"); // Events are unidirectional, `context` is not triggered.
+anotherContext.value("test"); //=> "test"
+defaultContext.value("test"); // Invalid.
 ```
 
 ## Example
 
 Tracing is a natural example for `context`:
 
-```js
+```ts
+import { Context, withValue } from "@borderless/context";
+
 // Use a unique symbol for tracing.
-const spanKey = Symbol('span');
+const spanKey = Symbol("span");
 
 // Start a new span, and automatically use "parent" span.
-export function startSpan(ctx: Context, name: string) {
-  const newCtx = new Context(ctx);
+export function startSpan<T extends { [spanKey]?: Span }>(
+  ctx: Context<T>,
+  name: string
+): [Span, Context<T & { [spanKey]: Span }>] {
   const span = tracer.startSpan(name, {
-    childOf: ctx.get(spanKey)
+    childOf: ctx.value(spanKey)
   });
-  newCtx.set(spanKey, span);
-  return [span, newCtx];
+
+  return [span, withValue(ctx, spanKey, span)];
 }
 
 // server.js
-async function app(req, next) {
-  const [span, req.ctx] = startSpan(req.ctx, 'request');
+export async function app(req, next) {
+  const [span, ctx] = startSpan(req.ctx, "request");
+
+  req.ctx = ctx;
 
   try {
     return await next();
@@ -86,8 +66,10 @@ async function app(req, next) {
 }
 
 // middleware.js
-async function middleware(req, next) {
-  const [span, req.ctx] = startSpan(req.ctx, 'middleware');
+export async function middleware(req, next) {
+  const [span, ctx] = startSpan(req.ctx, "middleware");
+
+  req.ctx = ctx;
 
   try {
     return await next();
@@ -101,13 +83,13 @@ async function middleware(req, next) {
 
 MIT
 
-[npm-image]: https://img.shields.io/npm/v/@borderlesslabs/context.svg?style=flat
-[npm-url]: https://npmjs.org/package/@borderlesslabs/context
-[downloads-image]: https://img.shields.io/npm/dm/@borderlesslabs/context.svg?style=flat
-[downloads-url]: https://npmjs.org/package/@borderlesslabs/context
+[npm-image]: https://img.shields.io/npm/v/@borderless/context.svg?style=flat
+[npm-url]: https://npmjs.org/package/@borderless/context
+[downloads-image]: https://img.shields.io/npm/dm/@borderless/context.svg?style=flat
+[downloads-url]: https://npmjs.org/package/@borderless/context
 [travis-image]: https://img.shields.io/travis/BorderlessLabs/context.svg?style=flat
 [travis-url]: https://travis-ci.org/BorderlessLabs/context
 [coveralls-image]: https://img.shields.io/coveralls/BorderlessLabs/context.svg?style=flat
 [coveralls-url]: https://coveralls.io/r/BorderlessLabs/context?branch=master
-[bundlephobia-image]: https://img.shields.io/bundlephobia/minzip/@borderlesslabs/context.svg
-[bundlephobia-url]: https://bundlephobia.com/result?p=@borderlesslabs/context
+[bundlephobia-image]: https://img.shields.io/bundlephobia/minzip/@borderless/context.svg
+[bundlephobia-url]: https://bundlephobia.com/result?p=@borderless/context
