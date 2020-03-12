@@ -1,0 +1,107 @@
+{
+  "name": "@borderlesslabs/context",
+  "version": "0.0.0",
+  "description": "Tiny, type-safe, JavaScript-native `context` implementation",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "module": "dist.es2015/index.js",
+  "sideEffects": false,
+  "jsnext:main": "dist.es2015/index.js",
+  "files": [
+    "dist/",
+    "dist.es2015/"
+  ],
+  "scripts": {
+    "prettier": "prettier --write",
+    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --quiet --fix",
+    "format": "npm run prettier -- \"{.,src/**}/*.{js,jsx,ts,tsx,json,css,md,yml,yaml}\"",
+    "build": "rimraf dist/ dist.es2015/ && tsc && tsc -P tsconfig.es2015.json",
+    "specs": "jest --coverage",
+    "test": "npm run lint && npm run build && npm run specs && npm run size",
+    "size": "size-limit",
+    "prepare": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/BorderlessLabs/context.git"
+  },
+  "keywords": [
+    "context",
+    "go",
+    "dependency",
+    "async",
+    "typescript",
+    "abort",
+    "controller",
+    "signal",
+    "events"
+  ],
+  "author": {
+    "name": "Blake Embrey",
+    "email": "hello@blakeembrey.com",
+    "url": "http://blakeembrey.me"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/BorderlessLabs/context/issues"
+  },
+  "homepage": "https://github.com/BorderlessLabs/context",
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "400 B"
+    }
+  ],
+  "jest": {
+    "roots": [
+      "<rootDir>/src/"
+    ],
+    "transform": {
+      "\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(tsx?|jsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,md,yml,yaml}": "npm run prettier"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=10"
+  },
+  "devDependencies": {
+    "@size-limit/preset-small-lib": "^4.3.1",
+    "@types/jest": "^25.1.4",
+    "@types/node": "^13.1.2",
+    "@typescript-eslint/eslint-plugin": "^2.14.0",
+    "@typescript-eslint/parser": "^2.14.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.9.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "husky": "^4.2.3",
+    "jest": "^25.1.0",
+    "lint-staged": "^10.0.8",
+    "prettier": "^1.19.1",
+    "rimraf": "^3.0.0",
+    "size-limit": "^4.3.1",
+    "ts-expect": "^1.1.0",
+    "ts-jest": "^25.2.1",
+    "typescript": "^3.7.4"
+  },
+  "dependencies": {
+    "@servie/events": "^1.0.0"
+  }
+}
