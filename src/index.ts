@@ -14,14 +14,12 @@ class BackgroundContext<T = {}> implements Context<T> {
 /**
  * The `ValueContext` object implements a chain-able `Context` interface.
  */
-class ValueContext<T> extends BackgroundContext<T> {
+class ValueContext<T> implements Context<T> {
   constructor(
     private _parent: Context<any>,
     private _key: keyof T,
     private _value: T[typeof _key]
-  ) {
-    super();
-  }
+  ) {}
 
   value<K extends keyof T>(key: K): T[K] {
     if (key === this._key) return this._value as any;
