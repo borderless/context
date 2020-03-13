@@ -65,7 +65,7 @@ describe("assign", () => {
 
       const end = performance.now();
 
-      expect(end - start).toBeGreaterThan(100);
+      expect(Math.ceil(end - start)).toBeGreaterThanOrEqual(100);
     });
 
     it("should allow manual abort", async () => {
