@@ -8,7 +8,7 @@
 
 > Tiny, type-safe, JavaScript-native `context` implementation.
 
-**Why?** Working on a project across browsers, serverless and node.js requires different implementations on the same thing, e.g. `fetch` vs `require('http')`. Go's [`context`](https://blog.golang.org/context) package provides a nice abstraction to bring all the interfaces together. By implementing a JavaScript first variation, we can achieve the same benefits.
+**Why?** Working on a project across browsers, workers and node.js requires different implementations on the same thing, e.g. `fetch` vs `require('http')`. Go's [`context`](https://blog.golang.org/context) package provides a nice abstraction to bring all the interfaces together. By implementing a JavaScript first variation, we can achieve the same benefits.
 
 ## Installation
 
@@ -23,16 +23,65 @@ Context values are unidirectional.
 ```ts
 import { background, withValue } from "@borderless/context";
 
-const defaultContext = background;
-const anotherContext = withValue(defaultContext, "test", "test");
+// Extend the default `background` context with a value.
+const ctx = withValue(background, "test", "test");
 
-anotherContext.value("test"); //=> "test"
-defaultContext.value("test"); // Invalid.
+ctx.value("test"); //=> "test"
+background.value("test"); // Invalid.
+```
+
+### Abort
+
+Use `withAbort` to support cancellation of execution in your application.
+
+```ts
+import { withAbort } from "@borderless/context";
+
+const [ctx, abort] = withAbort(parentCtx);
+
+onUserCancelsTask(() => abort(new Error("User canceled task")));
+```
+
+### Timeout
+
+Use `withTimeout` when you want to abort after a specific duration:
+
+```ts
+import { withTimeout } from "@borderless/context";
+
+const [ctx, abort] = withTimeout(parentCtx, 5000); // You can still `abort` manually.
+```
+
+### Using Abort
+
+The `useAbort` method will return a `Promise` which rejects when aborted.
+
+```ts
+import { useAbort } from "@borderless/context";
+
+// Race between the abort signal and making an ajax request.
+Promise.race([useAbort(ctx), ajax("http://example.com")]);
 ```
 
 ## Example
 
-Tracing is a natural example for `context`:
+### Abort Controller
+
+Use `context` with other abort signals, such as `fetch`.
+
+```ts
+import { useAbort, Context } from "@borderless/context";
+
+function request(ctx: Context<{}>, url: string) {
+  const controller = new AbortController();
+  withAbort(ctx).catch(e => controller.abort());
+  return fetch(url, { signal: controller.signal });
+}
+```
+
+### Application Tracing
+
+Distributed application tracing is a natural example for `context`:
 
 ```ts
 import { Context, withValue } from "@borderless/context";
@@ -54,7 +103,7 @@ export function startSpan<T extends { [spanKey]?: Span }>(
 
 // server.js
 export async function app(req, next) {
-  const [span, ctx] = startSpan(req.ctx, "request");
+  const [span, ctx] = startSpan(req.ctx, "app");
 
   req.ctx = ctx;
 
@@ -76,6 +125,25 @@ export async function middleware(req, next) {
   } finally {
     span.finish();
   }
+}
+```
+
+### Libraries
+
+JavaScript and TypeScript libraries can accept a typed `context` argument.
+
+```ts
+import { Context, withValue } from "@borderless/context";
+
+export function withSentry<T>(ctx: Context<T>) {
+  return withValue(ctx, sentryKey, someSentryImplementation);
+}
+
+export function captureException(
+  ctx: Context<{ [sentryKey]: SomeSentryImplementation }>,
+  error: Error
+) {
+  return ctx.value(sentryKey).captureException(error);
 }
 ```
 
